@@ -116,7 +116,8 @@ open -a Docker
 
 > **중요**
 >
-> MacBook에서는 Docker를 사용하기 전에 **Docker Desktop이 실행되어 있어야 합니다.**
+> DeepRacer 환경설정 및 학습을 진행하기 전에
+> **Docker Desktop이 실행되어 있어야 합니다.**
 
 Docker가 완전히 실행된 후 다음 명령어를 입력합니다.
 
@@ -139,7 +140,7 @@ Docker Desktop이 실행된 상태에서 진행합니다.
 ## 순서
 
 1. DRfC Repository 복제
-2. Docker Image 및 초기 설정
+2. DRfC 초기 설정 (`init.sh`)
 3. DRfC 명령어 활성화
 4. 학습 데이터 업로드
 5. 학습 시작
@@ -147,7 +148,11 @@ Docker Desktop이 실행된 상태에서 진행합니다.
 7. 학습된 모델 확인
 8. Viewer 확인
 
-전부 완료하면 로컬 환경에서 DeepRacer 모델을 학습할 수 있습니다.
+> **중요**
+>
+> Repository를 처음 clone한 경우에는 반드시 **`init.sh`를 먼저 실행**해야 합니다.
+>
+> `init.sh`를 실행하기 전에 `source bin/activate.sh` 또는 `dr-*` 명령어부터 실행하지 않습니다.
 
 ---
 
@@ -173,7 +178,9 @@ ls
 
 ---
 
-# 2. Docker Image 및 초기 설정
+# 2. DRfC 초기 설정
+
+## Docker 실행 확인
 
 먼저 Docker Desktop이 실행되어 있는지 확인합니다.
 
@@ -183,6 +190,8 @@ docker ps
 
 오류가 발생하지 않으면 정상입니다.
 
+---
+
 ## Docker Buildx 확인
 
 ```sh
@@ -191,9 +200,21 @@ docker buildx version
 
 정상적으로 버전이 출력되면 다음 단계로 넘어갑니다.
 
-## DRfC 초기 설정
+---
+
+## init.sh 실행
+
+> **처음 환경을 구축할 때 반드시 이 과정을 먼저 진행합니다.**
 
 Apple Silicon(M1/M2/M3/M4) MacBook에서는 GPU가 아닌 **CPU 환경**으로 설정합니다.
+
+`deepracer-for-cloud` 디렉터리에서 실행합니다.
+
+```sh
+cd ~/deepracer-for-cloud
+```
+
+초기 설정을 실행합니다.
 
 ```sh
 sudo bin/init.sh -a cpu -c local
@@ -204,7 +225,9 @@ sudo bin/init.sh -a cpu -c local
 - `-a cpu` : CPU를 이용하여 학습
 - `-c local` : 로컬 저장소(MinIO)를 사용
 
-초기 실행 시 필요한 Docker Image를 다운로드하기 때문에 시간이 오래 걸릴 수 있습니다.
+초기 실행 시 필요한 Docker Image 및 학습 환경을 준비하기 때문에 시간이 오래 걸릴 수 있습니다.
+
+**반드시 `init.sh`가 완료된 후 다음 단계로 넘어갑니다.**
 
 > **MacBook에서는 다음과 같은 Ubuntu용 명령어를 실행할 필요가 없습니다.**
 >
@@ -213,13 +236,15 @@ sudo bin/init.sh -a cpu -c local
 > sudo reboot -f
 > ```
 >
-> Docker Desktop만 실행되어 있으면 됩니다.
+> Docker Desktop이 실행되어 있으면 됩니다.
 
 ---
 
 # 3. DRfC 명령어 활성화
 
-이후 DeepRacer 관련 명령어는 기본적으로 `deepracer-for-cloud` 폴더에서 실행합니다.
+> `init.sh`를 정상적으로 완료한 후 진행합니다.
+
+DeepRacer 관련 명령어는 기본적으로 `deepracer-for-cloud` 디렉터리에서 실행합니다.
 
 먼저 폴더로 이동합니다.
 
@@ -233,20 +258,33 @@ DRfC 명령어를 활성화합니다.
 source bin/activate.sh
 ```
 
-> ## 대원칙
->
-> `dr-start-training`, `dr-update-env`, `dr-summary` 등 `dr-`로 시작하는 명령어가
->
-> ```text
-> command not found
-> ```
->
-> 와 같이 실행되지 않는다면 가장 먼저 아래 명령어를 다시 실행합니다.
->
-> ```sh
-> cd ~/deepracer-for-cloud
-> source bin/activate.sh
-> ```
+이제 `dr-`로 시작하는 DeepRacer 관련 명령어를 사용할 수 있습니다.
+
+예:
+
+```sh
+dr-summary
+```
+
+---
+
+## `dr-*` 명령어가 실행되지 않는 경우
+
+`dr-start-training`, `dr-update-env`, `dr-summary` 등의 명령어 실행 시
+
+```text
+command not found
+```
+
+가 발생한다면 다음 명령어를 다시 실행합니다.
+
+```sh
+cd ~/deepracer-for-cloud
+source bin/activate.sh
+```
+
+> **단, Repository를 처음 clone한 직후라면**
+> `source bin/activate.sh`보다 먼저 `init.sh`가 완료되어 있어야 합니다.
 
 필요한 설정을 업데이트합니다.
 
@@ -265,7 +303,7 @@ dr-update-env
 dr-upload-custom-files
 ```
 
-Reward Function을 수정했다면 학습을 시작하기 전에 다시 실행해야 합니다.
+Reward Function 또는 학습 설정 파일을 수정했다면 학습 시작 전에 다시 실행합니다.
 
 ```sh
 dr-upload-custom-files
@@ -413,11 +451,13 @@ dr-upload-custom-files
 dr-start-training
 ```
 
+> 이미 최초 환경설정에서 `init.sh`를 완료했다면 Reward Function을 수정할 때마다 `init.sh`를 다시 실행할 필요는 없습니다.
+
 ---
 
 # 오랜만에 MacBook을 켠 뒤 다시 학습하는 방법
 
-컴퓨터를 종료했다가 다시 켠 경우 DeepRacer 환경 전체를 다시 설치할 필요는 없습니다.
+이미 최초 환경설정에서 `init.sh`까지 정상적으로 완료했다면 컴퓨터를 다시 켤 때마다 `init.sh`를 실행할 필요는 없습니다.
 
 ## 1. Docker Desktop 실행
 
@@ -463,7 +503,7 @@ dr-upload-custom-files
 dr-start-training
 ```
 
-즉, 이미 환경설정을 완료한 MacBook이라면 일반적으로 다음 순서로 다시 시작하면 됩니다.
+즉, **최초 환경설정을 이미 완료한 MacBook**이라면 일반적으로 다음 순서로 다시 시작하면 됩니다.
 
 ```sh
 open -a Docker
@@ -474,6 +514,65 @@ source bin/activate.sh
 dr-upload-custom-files
 dr-start-training
 ```
+
+> `init.sh`는 **최초 환경설정 시 먼저 실행하는 명령어**이며,
+> 정상적으로 환경설정이 끝난 이후 매번 학습할 때마다 실행하는 명령어는 아닙니다.
+
+---
+
+# 에러 슈팅
+
+## `source bin/activate.sh` 실행 시 `no configuration file provided: not found`
+
+### 에러 내용
+
+`source bin/activate.sh` 실행 과정에서 다음과 같은 오류가 발생할 수 있습니다.
+
+```text
+no configuration file provided: not found
+```
+
+### 원인
+
+Repository를 clone한 후 **DRfC 초기 설정(`init.sh`)을 완료하지 않은 상태에서 `source bin/activate.sh`를 실행한 경우** 발생할 수 있습니다.
+
+### 해결
+
+먼저 `deepracer-for-cloud` 디렉터리로 이동합니다.
+
+```sh
+cd ~/deepracer-for-cloud
+```
+
+Docker Desktop이 실행되어 있는지 확인합니다.
+
+```sh
+docker ps
+```
+
+그다음 DRfC 초기 설정을 먼저 실행합니다.
+
+```sh
+sudo bin/init.sh -a cpu -c local
+```
+
+초기 설정이 정상적으로 완료된 후 다시 실행합니다.
+
+```sh
+source bin/activate.sh
+```
+
+> **최초 환경설정 순서**
+>
+> ```text
+> Repository clone
+>       ↓
+> init.sh
+>       ↓
+> source bin/activate.sh
+>       ↓
+> dr-* 명령어 사용
+> ```
 
 ---
 
@@ -493,7 +592,19 @@ dr-start-training
 
 # 핵심 명령어 정리
 
+## 최초 환경설정
+
+```sh
+cd ~/deepracer-for-cloud
+sudo bin/init.sh -a cpu -c local
+source bin/activate.sh
+```
+
+> **최초에는 `init.sh` → `source bin/activate.sh` 순서를 지킵니다.**
+
 ## DRfC 명령어가 안 될 때
+
+이미 `init.sh`를 완료한 환경이라면:
 
 ```sh
 cd ~/deepracer-for-cloud
